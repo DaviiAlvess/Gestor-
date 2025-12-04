@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Gestor Financeiro (SQLite)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-button.active {
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
+        }
+        .swal2-popup {
+            border-radius: 1rem;
+        }
+        #auth-screen, #app-screen {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Tela de Autenticação -->
+    <div id="auth-screen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg">
+            <h2 class="text-center text-3xl font-bold text-blue-600 mb-2">Bem-vindo!</h2>
+            <p class="text-center text-gray-500 mb-8">Acesse sua conta para continuar.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="email" class="sr-only">Email</label>
+                    <input type="email" id="email" placeholder="E-mail" class="w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Senha</label>
+                    <input type="password" id="password" placeholder="Senha" class="w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 mt-6">
+                <button id="login-btn" class="w-full flex-1 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300">Entrar</button>
+                <button id="signup-btn" class="w-full flex-1 bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition duration-300">Cadastrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela Principal do App -->
+    <div id="app-screen" class="container mx-auto p-2 sm:p-4 max-w-2xl">
+        <header class="text-center mb-6">
+            <div class="flex justify-between items-center">
+                <button id="logout-btn" class="text-red-500 hover:text-red-700 p-2" title="Sair">
+                    <i class="fas fa-sign-out-alt fa-lg"></i>
+                </button>
+                <h1 class="text-2xl sm:text-4xl font-bold text-blue-600">Meu Gestor Financeiro</h1>
+                <div class="w-10"></div>
+            </div>
+            <p id="user-display" class="text-gray-500 mt-2">Perfil: </p>
+        </header>
+
+        <!-- Resumo Financeiro -->
+        <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 text-center">
+            <div>
+                <h2 class="text-sm font-medium text-gray-500">Saldo do Mês</h2>
+                <p id="monthly-balance" class="text-xl sm:text-2xl font-semibold text-blue-600 mt-1">R$ 0,00</p>
+            </div>
+            <div class="space-y-2">
+                <div class="flex justify-center items-center gap-2">
+                    <h2 class="text-sm font-medium text-gray-500">Receitas do Mês</h2>
+                </div>
+                <p id="monthly-income" class="text-xl sm:text-2xl font-semibold text-green-500">R$ 0,00</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="income-goal-bar" class="bg-green-500 h-2.5 rounded-full" style="width: 0%;"></div>
+                </div>
+                <p id="income-goal-text" class="text-xs text-gray-500">Meta: R$ 0,00</p>
+            </div>
+            <div class="space-y-2">
+                <div class="flex justify-center items-center gap-2">
+                    <h2 class="text-sm font-medium text-gray-500">Despesas do Mês</h2>
+                </div>
+                <p id="monthly-expense" class="text-xl sm:text-2xl font-semibold text-red-500">R$ 0,00</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="spending-bar-preview" class="bg-red-500 h-2.5 rounded-full" style="width: 0%;"></div>
+                </div>
+                <p id="spending-preview-text" class="text-xs text-gray-500">Limite: R$ 0,00</p>
+            </div>
+        </div>
+
+        <!-- Limite de Gastos -->
+        <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-6">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold">Acompanhamento do Limite de Gastos</h2>
+                <button id="edit-limit-btn" class="text-blue-500 hover:text-blue-700 p-2">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-4">
+                <div id="spending-bar" class="bg-blue-500 h-4 rounded-full" style="width: 0%;"></div>
+            </div>
+            <div class="flex justify-between text-sm mt-1">
+                <span id="spending-text">R$ 0,00</span>
+                <span id="limit-text">de R$ 1000,00</span>
+            </div>
+        </div>
+
+        <!-- Abas -->
+        <div class="mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex justify-center sm:justify-start space-x-2 sm:space-x-4 overflow-x-auto whitespace-nowrap pb-1">
+                    <button class="tab-button py-4 px-2 border-b-2 font-medium text-sm text-gray-500 hover:text-blue-500 hover:border-blue-500 active" data-tab="transactions">
+                        <i class="fas fa-exchange-alt mr-2"></i>Transações
+                    </button>
+                    <button class="tab-button py-4 px-2 border-b-2 font-medium text-sm text-gray-500 hover:text-blue-500 hover:border-blue-500" data-tab="goals">
+                        <i class="fas fa-tasks mr-2"></i>Contas
+                    </button>
+                    <button class="tab-button py-4 px-2 border-b-2 font-medium text-sm text-gray-500 hover:text-blue-500 hover:border-blue-500" data-tab="reports">
+                        <i class="fas fa-chart-pie mr-2"></i>Relatórios
+                    </button>
+                    <button class="tab-button py-4 px-2 border-b-2 font-medium text-sm text-gray-500 hover:text-blue-500 hover:border-blue-500" data-tab="calculator">
+                        <i class="fas fa-calculator mr-2"></i>Calculadora
+                    </button>
+                    <button class="tab-button py-4 px-2 border-b-2 font-medium text-sm text-gray-500 hover:text-blue-500 hover:border-blue-500" data-tab="add">
+                        <i class="fas fa-plus-circle mr-2"></i>Adicionar
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Conteúdo das Abas -->
+        <div id="tab-content">
+            <!-- Aba de Transações -->
+            <div id="transactions-content" class="tab-pane active">
+                <h3 class="text-xl font-semibold mb-4">Histórico do Mês Atual</h3>
+                <div id="transactions-list" class="space-y-3"></div>
+            </div>
+            
+            <!-- Aba de Metas e Contas -->
+            <div id="goals-content" class="tab-pane hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold">Contas a Pagar/Receber</h3>
+                    <button id="add-goal-btn" class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-600">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div id="goals-list" class="space-y-3"></div>
+            </div>
+            
+            <!-- Aba de Relatórios -->
+            <div id="reports-content" class="tab-pane hidden">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold">Histórico e Gastos</h3>
+                        <div class="flex gap-2 mt-2 sm:mt-0">
+                            <select id="month-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></select>
+                            <select id="year-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></select>
+                            <button id="next-month-btn" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm">Próx Mês →</button>
+                        </div>
+                    </div>
+                    <div id="chart-container" class="relative h-64 sm:h-80 mb-6">
+                        <canvas id="expense-chart"></canvas>
+                    </div>
+                    <div id="report-summary" class="grid grid-cols-3 gap-4 text-center mb-6 p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-500">Receitas</h4>
+                            <p id="report-income" class="text-lg font-semibold text-green-500">R$ 0,00</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-500">Despesas</h4>
+                            <p id="report-expense" class="text-lg font-semibold text-red-500">R$ 0,00</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-500">Saldo</h4>
+                            <p id="report-balance" class="text-lg font-semibold text-blue-600">R$ 0,00</p>
+                        </div>
+                    </div>
+                    <h4 class="text-lg font-semibold mb-2">Transações do Período</h4>
+                    <div id="report-transactions-list" class="space-y-3 max-h-60 overflow-y-auto"></div>
+                    <h4 class="text-lg font-semibold mt-6 mb-2">📊 Despesas que Continuam no Próximo Mês</h4>
+                    <div id="carryover-expenses" class="space-y-3 max-h-40 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- Aba de Calculadora -->
+            <div id="calculator-content" class="tab-pane hidden">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-6">Calculadora de Dívidas e Receitas</h3>
+                    
+                    <!-- Abas da Calculadora -->
+                    <div class="flex gap-2 mb-6 border-b">
+                        <button id="calc-debt-tab" class="px-4 py-2 border-b-2 border-blue-600 text-blue-600 font-semibold">💳 Dívida</button>
+                        <button id="calc-income-tab" class="px-4 py-2 border-b-2 border-gray-300 text-gray-600 font-semibold hover:text-blue-600">💰 Receita</button>
+                    </div>
+
+                    <!-- Calculadora de Dívida -->
+                    <div id="debt-calc" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Valor da Dívida</label>
+                            <input type="number" id="debt-amount" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 1000" step="0.01">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Taxa de Juros Mensal (%)</label>
+                            <input type="number" id="debt-rate" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 2.5" step="0.01" value="0">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Parcela Mensal (Pagamento)</label>
+                            <input type="number" id="debt-payment" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 150" step="0.01">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mês que Terminará</label>
+                            <select id="debt-end-month" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="">Selecione o mês</option>
+                                <option value="1">Janeiro</option>
+                                <option value="2">Fevereiro</option>
+                                <option value="3">Março</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Maio</option>
+                                <option value="6">Junho</option>
+                                <option value="7">Julho</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
+                        </div>
+                        <button id="calc-debt-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700">
+                            Calcular Dívida
+                        </button>
+                        <div id="debt-result" class="hidden mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <h4 class="font-bold text-blue-900 mb-2">Resultado</h4>
+                            <div id="debt-result-text" class="text-sm text-blue-800 space-y-1"></div>
+                            <button id="save-debt-btn" class="mt-4 w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">
+                                💾 Salvar Dívida
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Calculadora de Receita -->
+                    <div id="income-calc" class="space-y-4 hidden">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Valor da Receita Mensal</label>
+                            <input type="number" id="income-amount" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 2000" step="0.01">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Taxa de Crescimento Mensal (%)</label>
+                            <input type="number" id="income-growth" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 3" step="0.01" value="0">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Quantos Meses?</label>
+                            <input type="number" id="income-months" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 12" min="1" max="120" value="12">
+                        </div>
+                        <button id="calc-income-btn" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700">
+                            Calcular Receita
+                        </button>
+                        <div id="income-result" class="hidden mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                            <h4 class="font-bold text-green-900 mb-2">Resultado</h4>
+                            <div id="income-result-text" class="text-sm text-green-800 space-y-1"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba de Adicionar -->
+            <div id="add-content" class="tab-pane hidden bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+                <form id="transaction-form">
+                    <div class="mb-4">
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                        <input type="text" id="description" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Salário, Aluguel" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+                        <input type="number" id="amount" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="0,00" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+                        <input type="date" id="date" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                        <select id="category" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                        </select>
+                    </div>
+                    <div id="debt-duration-wrapper" class="mb-4 hidden">
+                        <label for="debt-months" class="block text-sm font-medium text-gray-700 mb-1">Esta é uma dívida recorrente?</label>
+                        <div class="flex gap-2 items-center">
+                            <input type="checkbox" id="is-recurring-debt" class="h-4 w-4 rounded border-gray-300">
+                            <label for="is-recurring-debt" class="text-sm">Sim, é uma dívida com parcelas</label>
+                        </div>
+                    </div>
+                    <div id="recurring-debt-options" class="mb-4 space-y-3 hidden border border-yellow-200 p-3 rounded-md bg-yellow-50">
+                        <div>
+                            <label for="monthly-payment" class="block text-sm font-medium text-gray-700 mb-1">Valor da Parcela Mensal</label>
+                            <input type="number" id="monthly-payment" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 150" step="0.01">
+                        </div>
+                        <div>
+                            <label for="debt-end-month-select" class="block text-sm font-medium text-gray-700 mb-1">Até que mês a dívida vai continuar?</label>
+                            <select id="debt-end-month-select" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="">Selecione o mês</option>
+                                <option value="1">Janeiro</option>
+                                <option value="2">Fevereiro</option>
+                                <option value="3">Março</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Maio</option>
+                                <option value="6">Junho</option>
+                                <option value="7">Julho</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
+                        </div>
+                        <p class="text-xs text-gray-600">Será criada uma parcela para cada mês até o mês selecionado</p>
+                    </div>
+                    <div id="expense-installments-wrapper" class="mb-4 hidden">
+                        <label class="flex items-center gap-2 p-2 border border-orange-200 rounded-md bg-orange-50">
+                            <input type="checkbox" id="has-installments" class="h-4 w-4 rounded border-gray-300">
+                            <span class="text-sm font-medium">Esta despesa tem parcelas?</span>
+                        </label>
+                    </div>
+                    <div id="installments-options" class="mb-4 space-y-3 hidden border border-orange-200 p-3 rounded-md bg-orange-50">
+                        <div>
+                            <label for="num-installments" class="block text-sm font-medium text-gray-700 mb-1">Quantas parcelas?</label>
+                            <input type="number" id="num-installments" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 3" min="2" max="60" value="2">
+                        </div>
+                        <div>
+                            <label for="installment-end-month" class="block text-sm font-medium text-gray-700 mb-1">Em que mês termina?</label>
+                            <select id="installment-end-month" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="">Selecione o mês</option>
+                                <option value="1">Janeiro</option>
+                                <option value="2">Fevereiro</option>
+                                <option value="3">Março</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Maio</option>
+                                <option value="6">Junho</option>
+                                <option value="7">Julho</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
+                        </div>
+                        <p class="text-xs text-gray-600">O valor será dividido automaticamente por <span id="installment-value-preview">1</span> parcela(s)</p>
+                    </div>
+                    <div class="mb-6">
+                        <span class="block text-sm font-medium text-gray-700 mb-2">Tipo</span>
+                        <div class="flex flex-col sm:flex-row sm:gap-4 gap-y-2">
+                            <label class="flex items-center">
+                                <input type="radio" name="type" value="income" class="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500" checked>
+                                <span class="ml-2 text-green-600 font-medium">Receita</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="type" value="expense" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500">
+                                <span class="ml-2 text-red-600 font-medium">Despesa</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300">
+                        Adicionar Transação
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script>
+        // === BANCO DE DADOS SQLite ===
+        let db = null;
+        let SQL = null;
+        let currentUserId = null;
+        let currentUserEmail = null;
+
+        // Inicializar banco de dados
+        async function initDB() {
+            return new Promise((resolve) => {
+                const initFunction = typeof initSqlJs !== 'undefined' ? initSqlJs : window.initSqlJs;
+                initFunction({
+                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+                }).then(SQL_lib => {
+                    SQL = SQL_lib;
+                    const saved = localStorage.getItem('db');
+                    db = saved ? new SQL.Database(Uint8Array.from(atob(saved), c => c.charCodeAt(0))) : new SQL.Database();
+                    createTables();
+                    resolve();
+                }).catch(err => {
+                    console.error('Erro ao carregar SQL.js:', err);
+                    Swal.fire('Erro', 'Falha ao carregar o banco de dados', 'error');
+                });
+            });
+        }
+
+        function createTables() {
+            db.run(`
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT UNIQUE,
+                    password TEXT
+                )
+            `);
+            db.run(`
+                CREATE TABLE IF NOT EXISTS transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    description TEXT,
+                    amount REAL,
+                    date TEXT,
+                    type TEXT,
+                    category TEXT
+                )
+            `);
+            db.run(`
+                CREATE TABLE IF NOT EXISTS goals (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    description TEXT,
+                    amount REAL,
+                    dueDate TEXT,
+                    type TEXT,
+                    status TEXT
+                )
+            `);
+            db.run(`
+                CREATE TABLE IF NOT EXISTS categories (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    name TEXT,
+                    isEssential INTEGER
+                )
+            `);
+            db.run(`
+                CREATE TABLE IF NOT EXISTS settings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    spendingLimit REAL,
+                    incomeGoal REAL
+                )
+            `);
+            saveDB();
+        }
+
+        function saveDB() {
+            const data = db.export();
+            const arr = Array.from(data);
+            const str = String.fromCharCode.apply(null, arr);
+            localStorage.setItem('db', btoa(str));
+        }
+
+        function query(sql, params = []) {
+            const stmt = db.prepare(sql);
+            stmt.bind(params);
+            const result = [];
+            while (stmt.step()) {
+                result.push(stmt.getAsObject());
+            }
+            stmt.free();
+            return result;
+        }
+
+        function run(sql, params = []) {
+            db.run(sql, params);
+            saveDB();
+        }
+
+        // === AUTENTICAÇÃO ===
+        async function signup(email, password) {
+            const existing = query('SELECT * FROM users WHERE email = ?', [email]);
+            if (existing.length) throw new Error('Email já cadastrado');
+            
+            run('INSERT INTO users (email, password) VALUES (?, ?)', [email, password]);
+            const user = query('SELECT * FROM users WHERE email = ?', [email])[0];
+            
+            // Categorias padrão
+            const cats = [
+                {name: 'Alimentação', isEssential: 1},
+                {name: 'Transporte', isEssential: 1},
+                {name: 'Moradia', isEssential: 1},
+                {name: 'Lazer', isEssential: 0},
+                {name: 'Salário', isEssential: 0},
+                {name: 'Outros', isEssential: 0}
+            ];
+            cats.forEach(cat => {
+                run('INSERT INTO categories (user_id, name, isEssential) VALUES (?, ?, ?)', 
+                    [user.id, cat.name, cat.isEssential]);
+            });
+            
+            // Configurações padrão
+            run('INSERT INTO settings (user_id, spendingLimit, incomeGoal) VALUES (?, ?, ?)', 
+                [user.id, 1000, 3000]);
+            
+            return user;
+        }
+
+        async function login(email, password) {
+            const user = query('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
+            if (!user.length) throw new Error('Email ou senha inválidos');
+            return user[0];
+        }
+
+        // === INTERFACE ===
+        const authScreen = document.getElementById('auth-screen');
+        const appScreen = document.getElementById('app-screen');
+        const loginBtn = document.getElementById('login-btn');
+        const signupBtn = document.getElementById('signup-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const userDisplay = document.getElementById('user-display');
+
+        let spendingLimit = 1000;
+        let incomeGoal = 3000;
+        let currentMonthTransactions = [];
+        let goals = [];
+        let categories = [];
+
+        loginBtn.addEventListener('click', async () => {
+            try {
+                const user = await login(emailInput.value, passwordInput.value);
+                currentUserId = user.id;
+                currentUserEmail = user.email;
+                localStorage.setItem('user', JSON.stringify(user));
+                showApp();
+            } catch (e) {
+                Swal.fire('Erro', e.message, 'error');
+            }
+        });
+
+        signupBtn.addEventListener('click', async () => {
+            try {
+                if (passwordInput.value.length < 6) throw new Error('Senha mínimo 6 caracteres');
+                const user = await signup(emailInput.value, passwordInput.value);
+                currentUserId = user.id;
+                currentUserEmail = user.email;
+                localStorage.setItem('user', JSON.stringify(user));
+                showApp();
+            } catch (e) {
+                Swal.fire('Erro', e.message, 'error');
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            currentUserId = null;
+            currentUserEmail = null;
+            localStorage.removeItem('user');
+            emailInput.value = '';
+            passwordInput.value = '';
+            authScreen.style.display = 'flex';
+            appScreen.style.display = 'none';
+        });
+
+        function showApp() {
+            authScreen.style.display = 'none';
+            appScreen.style.display = 'block';
+            userDisplay.textContent = `Perfil: ${currentUserEmail}`;
+            loadData();
+        }
+
+        function loadData() {
+            const settings = query('SELECT * FROM settings WHERE user_id = ?', [currentUserId]);
+            if (settings.length) {
+                spendingLimit = settings[0].spendingLimit;
+                incomeGoal = settings[0].incomeGoal;
+            }
+            
+            const today = new Date();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            currentMonthTransactions = query(
+                'SELECT * FROM transactions WHERE user_id = ? AND date LIKE ?',
+                [currentUserId, `${year}-${month}%`]
+            );
+            
+            goals = query('SELECT * FROM goals WHERE user_id = ? AND status = ?', [currentUserId, 'pending']);
+            categories = query('SELECT * FROM categories WHERE user_id = ?', [currentUserId]);
+            
+            updateUI();
+            updateCategorySelect();
+        }
+
+        function formatCurrency(v) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+        }
+
+        function updateUI() {
+            const income = currentMonthTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+            const expense = currentMonthTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+            
+            document.getElementById('monthly-balance').textContent = formatCurrency(income - expense);
+            document.getElementById('monthly-income').textContent = formatCurrency(income);
+            document.getElementById('monthly-expense').textContent = formatCurrency(expense);
+            
+            const pct = Math.min((expense / spendingLimit) * 100, 100);
+            const bar = document.getElementById('spending-bar');
+            bar.style.width = pct + '%';
+            bar.className = pct > 90 ? 'bg-red-500 h-4 rounded-full' : pct > 70 ? 'bg-yellow-500 h-4 rounded-full' : 'bg-blue-500 h-4 rounded-full';
+            
+            document.getElementById('spending-text').textContent = formatCurrency(expense);
+            document.getElementById('limit-text').textContent = `de ${formatCurrency(spendingLimit)}`;
+            document.getElementById('spending-bar-preview').style.width = pct + '%';
+            document.getElementById('spending-preview-text').textContent = `Limite: ${formatCurrency(spendingLimit)}`;
+            
+            const incomePct = Math.min((income / incomeGoal) * 100, 100);
+            document.getElementById('income-goal-bar').style.width = incomePct + '%';
+            document.getElementById('income-goal-text').textContent = `${formatCurrency(income)} de ${formatCurrency(incomeGoal)}`;
+            
+            renderTransactions();
+            renderGoals();
+        }
+
+        function renderTransactions() {
+            const list = document.getElementById('transactions-list');
+            list.innerHTML = '';
+            if (!currentMonthTransactions.length) {
+                list.innerHTML = '<p class="text-gray-500">Nenhuma transação</p>';
+                return;
+            }
+            currentMonthTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            currentMonthTransactions.forEach(t => {
+                const isIncome = t.type === 'income';
+                const el = document.createElement('div');
+                el.className = 'flex items-center bg-white p-4 rounded-xl shadow-sm';
+                el.innerHTML = `
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mr-4 ${isIncome ? 'bg-green-100' : 'bg-red-100'}">
+                        <i class="fas ${isIncome ? 'fa-arrow-up text-green-500' : 'fa-arrow-down text-red-500'}"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <p class="font-semibold">${t.description}</p>
+                        <p class="text-xs text-gray-500">${t.category || 'Outros'} - ${new Date(t.date).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold ${isIncome ? 'text-green-500' : 'text-red-500'}">
+                            ${isIncome ? '+' : '-'} ${formatCurrency(t.amount)}
+                        </p>
+                        <button class="delete-tx text-xs text-red-500 hover:text-red-700" data-id="${t.id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(el);
+            });
+        }
+
+        function renderGoals() {
+            const list = document.getElementById('goals-list');
+            list.innerHTML = '';
+            if (!goals.length) {
+                list.innerHTML = '<p class="text-gray-500">Nenhuma conta pendente</p>';
+                return;
+            }
+            goals.forEach(g => {
+                const isIncome = g.type === 'income';
+                const el = document.createElement('div');
+                el.className = `bg-white p-4 rounded-lg shadow-sm border-l-4 ${isIncome ? 'border-l-green-500' : 'border-l-red-500'} flex justify-between items-center`;
+                el.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${g.description}</p>
+                        <p class="text-sm text-gray-500">Vence em: ${new Date(g.dueDate).toLocaleDateString('pt-BR')}</p>
+                        <p class="text-sm font-bold">${formatCurrency(g.amount)}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="mark-paid bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center" data-id="${g.id}">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="delete-goal text-red-500 hover:text-red-700" data-id="${g.id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(el);
+            });
+        }
+
+        function updateCategorySelect() {
+            const sel = document.getElementById('category');
+            sel.innerHTML = '';
+            categories.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = c.name;
+                sel.appendChild(opt);
+            });
+        }
+
+        // Mostrar opção de dívida recorrente quando categoria for "Dívidas"
+        function updateInstallmentsVisibility() {
+            const isExpense = document.querySelector('input[name="type"]:checked').value === 'expense';
+            const isDivida = document.getElementById('category').value === 'Dívidas';
+            document.getElementById('expense-installments-wrapper').classList.toggle('hidden', !isExpense || isDivida);
+        }
+
+        document.getElementById('category').addEventListener('change', (e) => {
+            const isDivida = e.target.value === 'Dívidas';
+            document.getElementById('debt-duration-wrapper').classList.toggle('hidden', !isDivida);
+            updateInstallmentsVisibility();
+            
+            if (!isDivida) {
+                document.getElementById('is-recurring-debt').checked = false;
+                document.getElementById('recurring-debt-options').classList.add('hidden');
+            }
+        });
+
+        document.querySelectorAll('input[name="type"]').forEach(radio => {
+            radio.addEventListener('change', updateInstallmentsVisibility);
+        });
+
+        document.getElementById('is-recurring-debt').addEventListener('change', (e) => {
+            document.getElementById('recurring-debt-options').classList.toggle('hidden', !e.target.checked);
+        });
+
+        document.getElementById('has-installments').addEventListener('change', (e) => {
+            document.getElementById('installments-options').classList.toggle('hidden', !e.target.checked);
+        });
+
+        document.getElementById('num-installments').addEventListener('change', (e) => {
+            document.getElementById('installment-value-preview').textContent = e.target.value;
+        });
+        document.getElementById('transaction-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const desc = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const date = document.getElementById('date').value;
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const category = document.getElementById('category').value;
+
+            if (!desc || !amount || !date || !category) {
+                Swal.fire('Erro', 'Preencha todos os campos', 'error');
+                return;
+            }
+
+            // Adicionar transação principal
+            run('INSERT INTO transactions (user_id, description, amount, date, type, category) VALUES (?, ?, ?, ?, ?, ?)',
+                [currentUserId, desc, amount, date, type, category]);
+            
+            // Se é dívida recorrente, criar parcelas futuras
+            if (category === 'Dívidas' && document.getElementById('is-recurring-debt').checked) {
+                const monthlyPayment = parseFloat(document.getElementById('monthly-payment').value);
+                const endMonth = parseInt(document.getElementById('debt-end-month-select').value);
+                
+                if (!monthlyPayment || monthlyPayment <= 0 || !endMonth) {
+                    Swal.fire('Erro', 'Preencha o valor da parcela e selecione o mês final', 'error');
+                    return;
+                }
+
+                const startDate = new Date(date);
+                const currentMonth = startDate.getMonth() + 1;
+                const currentYear = startDate.getFullYear();
+                
+                // Calcular quantos meses até o mês final
+                let monthsToCreate = 0;
+                if (endMonth > currentMonth) {
+                    monthsToCreate = endMonth - currentMonth;
+                } else if (endMonth < currentMonth) {
+                    monthsToCreate = (12 - currentMonth) + endMonth;
+                } else {
+                    monthsToCreate = 12;
+                }
+
+                // Criar parcelas futuras
+                for (let i = 1; i <= monthsToCreate; i++) {
+                    const parcelDate = new Date(startDate);
+                    parcelDate.setMonth(parcelDate.getMonth() + i);
+                    const dateStr = parcelDate.toISOString().split('T')[0];
+                    run('INSERT INTO transactions (user_id, description, amount, date, type, category) VALUES (?, ?, ?, ?, ?, ?)',
+                        [currentUserId, `${desc} (Parcela ${i})`, monthlyPayment, dateStr, type, category]);
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Dívida Adicionada!',
+                    text: `${monthsToCreate} parcelas criadas até ${['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][endMonth]}`,
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+            // Se é despesa com parcelas
+            else if (type === 'expense' && document.getElementById('has-installments').checked) {
+                const numInstallments = parseInt(document.getElementById('num-installments').value);
+                const endMonth = parseInt(document.getElementById('installment-end-month').value);
+                
+                if (!numInstallments || numInstallments <= 0 || !endMonth) {
+                    Swal.fire('Erro', 'Preencha o número de parcelas e o mês final', 'error');
+                    return;
+                }
+
+                const startDate = new Date(date);
+                const parcelAmount = amount / numInstallments;
+                
+                // Criar parcelas futuras
+                for (let i = 1; i < numInstallments; i++) {
+                    const parcelDate = new Date(startDate);
+                    parcelDate.setMonth(parcelDate.getMonth() + i);
+                    const dateStr = parcelDate.toISOString().split('T')[0];
+                    run('INSERT INTO transactions (user_id, description, amount, date, type, category) VALUES (?, ?, ?, ?, ?, ?)',
+                        [currentUserId, `${desc} (Parcela ${i + 1}/${numInstallments})`, parcelAmount, dateStr, type, category]);
+                }
+
+                // Atualizar valor da primeira transação
+                run('UPDATE transactions SET amount = ? WHERE user_id = ? AND description = ? AND date = ? AND type = ? ORDER BY id DESC LIMIT 1',
+                    [parcelAmount, currentUserId, desc, date, type]);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Despesa com Parcelas Adicionada!',
+                    text: `${numInstallments} parcelas de ${formatCurrency(parcelAmount)} criadas até ${['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][endMonth]}`,
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            } else {
+                Swal.fire({icon: 'success', title: 'Adicionado!', showConfirmButton: false, timer: 1500});
+            }
+            
+            document.getElementById('transaction-form').reset();
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('is-recurring-debt').checked = false;
+            document.getElementById('has-installments').checked = false;
+            document.getElementById('recurring-debt-options').classList.add('hidden');
+            document.getElementById('installments-options').classList.add('hidden');
+            document.getElementById('debt-duration-wrapper').classList.add('hidden');
+            document.getElementById('expense-installments-wrapper').classList.add('hidden');
+            loadData();
+        });
+
+        document.getElementById('transactions-list').addEventListener('click', (e) => {
+            if (e.target.closest('.delete-tx')) {
+                const id = e.target.closest('.delete-tx').dataset.id;
+                Swal.fire({
+                    title: 'Deletar?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim'
+                }).then(r => {
+                    if (r.isConfirmed) {
+                        run('DELETE FROM transactions WHERE id = ?', [id]);
+                        loadData();
+                    }
+                });
+            }
+        });
+
+        document.getElementById('edit-limit-btn').addEventListener('click', () => {
+            Swal.fire({
+                title: 'Limite de Gastos',
+                input: 'number',
+                inputValue: spendingLimit,
+                showCancelButton: true
+            }).then(r => {
+                if (r.value) {
+                    spendingLimit = parseFloat(r.value);
+                    run('UPDATE settings SET spendingLimit = ? WHERE user_id = ?', [spendingLimit, currentUserId]);
+                    updateUI();
+                }
+            });
+        });
+
+        document.getElementById('add-goal-btn').addEventListener('click', () => {
+            Swal.fire({
+                title: 'Nova Conta',
+                html: `
+                    <input id="goal-desc" class="swal2-input" placeholder="Descrição">
+                    <input id="goal-amount" type="number" class="swal2-input" placeholder="Valor">
+                    <input id="goal-date" type="date" class="swal2-input">
+                    <select id="goal-type" class="swal2-input">
+                        <option value="expense">A Pagar</option>
+                        <option value="income">A Receber</option>
+                    </select>
+                `,
+                showCancelButton: true,
+                preConfirm: () => ({
+                    desc: document.getElementById('goal-desc').value,
+                    amount: parseFloat(document.getElementById('goal-amount').value),
+                    date: document.getElementById('goal-date').value,
+                    type: document.getElementById('goal-type').value
+                })
+            }).then(r => {
+                if (r.value && r.value.desc && r.value.amount && r.value.date) {
+                    run('INSERT INTO goals (user_id, description, amount, dueDate, type, status) VALUES (?, ?, ?, ?, ?, ?)',
+                        [currentUserId, r.value.desc, r.value.amount, r.value.date, r.value.type, 'pending']);
+                    loadData();
+                }
+            });
+        });
+
+        document.getElementById('goals-list').addEventListener('click', (e) => {
+            if (e.target.closest('.mark-paid')) {
+                const id = e.target.closest('.mark-paid').dataset.id;
+                const goal = goals.find(g => g.id == id);
+                run('INSERT INTO transactions (user_id, description, amount, date, type, category) VALUES (?, ?, ?, ?, ?, ?)',
+                    [currentUserId, goal.description, goal.amount, new Date().toISOString().split('T')[0], goal.type, 'Contas']);
+                run('UPDATE goals SET status = ? WHERE id = ?', ['completed', id]);
+                Swal.fire({icon: 'success', title: 'Registrado!', showConfirmButton: false, timer: 1500});
+                loadData();
+            }
+            if (e.target.closest('.delete-goal')) {
+                const id = e.target.closest('.delete-goal').dataset.id;
+                Swal.fire({
+                    title: 'Deletar?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim'
+                }).then(r => {
+                    if (r.isConfirmed) {
+                        run('DELETE FROM goals WHERE id = ?', [id]);
+                        loadData();
+                    }
+                });
+            }
+        });
+
+        // Abas
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+                btn.classList.add('active');
+                const tab = btn.dataset.tab;
+                document.getElementById(`${tab}-content`).classList.remove('hidden');
+            });
+        });
+
+        // === CALCULADORA ===
+        document.getElementById('calc-debt-tab').addEventListener('click', () => {
+            document.getElementById('calc-debt-tab').classList.add('border-blue-600', 'text-blue-600');
+            document.getElementById('calc-debt-tab').classList.remove('border-gray-300', 'text-gray-600');
+            document.getElementById('calc-income-tab').classList.remove('border-blue-600', 'text-blue-600');
+            document.getElementById('calc-income-tab').classList.add('border-gray-300', 'text-gray-600');
+            document.getElementById('debt-calc').classList.remove('hidden');
+            document.getElementById('income-calc').classList.add('hidden');
+        });
+
+        document.getElementById('calc-income-tab').addEventListener('click', () => {
+            document.getElementById('calc-income-tab').classList.add('border-blue-600', 'text-blue-600');
+            document.getElementById('calc-income-tab').classList.remove('border-gray-300', 'text-gray-600');
+            document.getElementById('calc-debt-tab').classList.remove('border-blue-600', 'text-blue-600');
+            document.getElementById('calc-debt-tab').classList.add('border-gray-300', 'text-gray-600');
+            document.getElementById('income-calc').classList.remove('hidden');
+            document.getElementById('debt-calc').classList.add('hidden');
+        });
+
+        document.getElementById('calc-debt-btn').addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('debt-amount').value);
+            const rate = parseFloat(document.getElementById('debt-rate').value) / 100;
+            const payment = parseFloat(document.getElementById('debt-payment').value);
+            const endMonth = parseInt(document.getElementById('debt-end-month').value);
+
+            if (!amount || amount <= 0 || !payment || payment <= 0) {
+                Swal.fire('Erro', 'Preencha o valor da dívida e da parcela', 'error');
+                return;
+            }
+
+            let remaining = amount;
+            let months = 0;
+            let totalPaid = 0;
+            let totalInterest = 0;
+            const schedule = [];
+
+            while (remaining > 0 && months < 360) {
+                months++;
+                const interest = remaining * rate;
+                totalInterest += interest;
+                const principal = Math.min(payment - interest, remaining);
+                remaining -= principal;
+                totalPaid += payment;
+
+                if (months <= 12) {
+                    schedule.push({
+                        month: months,
+                        interest: interest,
+                        principal: principal,
+                        remaining: Math.max(remaining, 0)
+                    });
+                }
+            }
+
+            const resultDiv = document.getElementById('debt-result');
+            const resultText = document.getElementById('debt-result-text');
+            
+            let html = `
+                <p><strong>Dívida Inicial:</strong> ${formatCurrency(amount)}</p>
+                <p><strong>Parcela Mensal:</strong> ${formatCurrency(payment)}</p>
+                <p><strong>Meses para Pagar:</strong> ${months} meses</p>
+                <p><strong>Total de Juros:</strong> ${formatCurrency(totalInterest)}</p>
+                <p><strong>Total Pago:</strong> ${formatCurrency(totalPaid)}</p>
+            `;
+
+            if (endMonth) {
+                const months_name = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                const currentMonth = new Date().getMonth() + 1;
+                const monthsFromNow = (endMonth - currentMonth + 12) % 12 || 12;
+                
+                if (months <= monthsFromNow) {
+                    html += `<p class="text-green-700 font-bold">✓ Você consegue pagar até ${months_name[endMonth]}!</p>`;
+                } else {
+                    const monthsOver = months - monthsFromNow;
+                    html += `<p class="text-red-700 font-bold">✗ Faltará ${monthsOver} mês(es) após ${months_name[endMonth]}</p>`;
+                }
+            }
+
+            resultText.innerHTML = html;
+            resultDiv.classList.remove('hidden');
+
+            // Guardar dados da dívida para salvar depois
+            window.debtData = {
+                amount, rate, payment, endMonth, months, totalInterest, totalPaid
+            };
+        });
+
+        document.getElementById('save-debt-btn').addEventListener('click', () => {
+            if (!window.debtData) return;
+            
+            const { amount, payment, endMonth, months } = window.debtData;
+            
+            Swal.fire({
+                title: 'Salvar Dívida',
+                html: `
+                    <div class="text-left">
+                        <label class="block text-sm font-medium mb-2">Nome/Descrição da Dívida</label>
+                        <input id="debt-name" class="swal2-input" placeholder="Ex: Cartão de Crédito, Empréstimo" value="Dívida">
+                        <label class="block text-sm font-medium mb-2 mt-4">Começar em que data?</label>
+                        <input id="debt-start-date" type="date" class="swal2-input">
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Salvar',
+                preConfirm: () => {
+                    const name = document.getElementById('debt-name').value || 'Dívida';
+                    const startDate = document.getElementById('debt-start-date').value;
+                    if (!startDate) {
+                        Swal.showValidationMessage('Selecione uma data');
+                        return null;
+                    }
+                    return { name, startDate };
+                }
+            }).then(result => {
+                if (result.value) {
+                    const { name, startDate } = result.value;
+                    
+                    // Adicionar dívida como conta pendente
+                    run('INSERT INTO goals (user_id, description, amount, dueDate, type, status) VALUES (?, ?, ?, ?, ?, ?)',
+                        [currentUserId, `${name} (${months} parcelas de ${formatCurrency(payment)})`, amount, startDate, 'expense', 'pending']);
+                    
+                    // Adicionar primeira transação da dívida
+                    run('INSERT INTO transactions (user_id, description, amount, date, type, category) VALUES (?, ?, ?, ?, ?, ?)',
+                        [currentUserId, `Dívida: ${name}`, amount, startDate, 'expense', 'Dívidas']);
+                    
+                    // Adicionar transações das parcelas dos próximos meses
+                    const startDateObj = new Date(startDate);
+                    for (let i = 1; i < months && i <= 12; i++) {
+                        const parcelDate = new Date(startDateObj);
+                        parcelDate.setMonth(parcelDate.getMonth() + i);
+                        const dateStr = parcelDate.toISOString().split('T')[0];
+                        run('INSERT INTO transactions (user_id, description, amount, date, type, category) VALUES (?, ?, ?, ?, ?, ?)',
+                            [currentUserId, `Parcela ${i} - ${name}`, window.debtData.payment, dateStr, 'expense', 'Dívidas']);
+                    }
+                    
+                    Swal.fire('Sucesso!', 'Dívida e parcelas adicionadas aos relatórios!', 'success');
+                    loadData();
+                    
+                    // Limpar
+                    window.debtData = null;
+                    document.getElementById('debt-result').classList.add('hidden');
+                    document.getElementById('debt-amount').value = '';
+                    document.getElementById('debt-rate').value = '0';
+                    document.getElementById('debt-payment').value = '';
+                    document.getElementById('debt-end-month').value = '';
+                }
+            });
+        });
+
+        document.getElementById('calc-income-btn').addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('income-amount').value);
+            const growth = parseFloat(document.getElementById('income-growth').value) / 100;
+            const months = parseInt(document.getElementById('income-months').value);
+
+            if (!amount || amount <= 0 || months <= 0) {
+                Swal.fire('Erro', 'Preencha os valores corretamente', 'error');
+                return;
+            }
+
+            let total = 0;
+            let currentAmount = amount;
+            let monthlyValues = [];
+
+            for (let i = 1; i <= months; i++) {
+                total += currentAmount;
+                monthlyValues.push(currentAmount);
+                currentAmount = currentAmount * (1 + growth);
+            }
+
+            const resultDiv = document.getElementById('income-result');
+            const resultText = document.getElementById('income-result-text');
+            
+            let html = `
+                <p><strong>Receita Inicial:</strong> ${formatCurrency(amount)}</p>
+                <p><strong>Crescimento Mensal:</strong> ${(growth * 100).toFixed(2)}%</p>
+                <p><strong>Período:</strong> ${months} meses</p>
+                <p><strong>Receita Final:</strong> ${formatCurrency(currentAmount)}</p>
+                <p><strong>Total Acumulado:</strong> ${formatCurrency(total)}</p>
+                <p class="text-green-700 font-bold">📈 Média Mensal: ${formatCurrency(total / months)}</p>
+            `;
+
+            resultText.innerHTML = html;
+            resultDiv.classList.remove('hidden');
+        });
+
+
+        // Relatórios
+        function populateDateSelectors() {
+            const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth();
+            document.getElementById('month-select').innerHTML = '';
+            document.getElementById('year-select').innerHTML = '';
+            for(let i = 0; i < 12; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = months[i];
+                if(i === currentMonth) option.selected = true;
+                document.getElementById('month-select').appendChild(option);
+            }
+            for(let i = currentYear; i >= currentYear - 5; i--) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                document.getElementById('year-select').appendChild(option);
+            }
+            document.getElementById('month-select').addEventListener('change', fetchReportData);
+            document.getElementById('year-select').addEventListener('change', fetchReportData);
+        }
+
+        document.getElementById('next-month-btn').addEventListener('click', () => {
+            let month = parseInt(document.getElementById('month-select').value);
+            let year = parseInt(document.getElementById('year-select').value);
+            
+            month++;
+            if (month > 11) {
+                month = 0;
+                year++;
+            }
+            
+            document.getElementById('month-select').value = month;
+            document.getElementById('year-select').value = year;
+            fetchReportData();
+        });
+
+        async function fetchReportData() {
+            if (!currentUserId) return;
+            const year = document.getElementById('year-select').value;
+            const month = String(parseInt(document.getElementById('month-select').value) + 1).padStart(2, '0');
+            const reportTransactions = query(
+                'SELECT * FROM transactions WHERE user_id = ? AND date LIKE ? ORDER BY date DESC',
+                [currentUserId, `${year}-${month}%`]
+            );
+            
+            const periodIncome = reportTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+            const periodExpense = reportTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+            document.getElementById('report-income').textContent = formatCurrency(periodIncome);
+            document.getElementById('report-expense').textContent = formatCurrency(periodExpense);
+            document.getElementById('report-balance').textContent = formatCurrency(periodIncome - periodExpense);
+            
+            const list = document.getElementById('report-transactions-list');
+            list.innerHTML = '';
+            reportTransactions.forEach(t => {
+                const isIncome = t.type === 'income';
+                const el = document.createElement('div');
+                el.className = 'flex items-center bg-white p-4 rounded-xl shadow-sm';
+                el.innerHTML = `
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mr-4 ${isIncome ? 'bg-green-100' : 'bg-red-100'}">
+                        <i class="fas ${isIncome ? 'fa-arrow-up text-green-500' : 'fa-arrow-down text-red-500'}"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <p class="font-semibold">${t.description}</p>
+                        <p class="text-xs text-gray-500">${t.category || 'Outros'} - ${new Date(t.date).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <p class="font-bold ${isIncome ? 'text-green-500' : 'text-red-500'}">
+                        ${isIncome ? '+' : '-'} ${formatCurrency(t.amount)}
+                    </p>
+                `;
+                list.appendChild(el);
+            });
+
+            // Mostrar despesas do próximo mês
+            const nextMonthNum = (parseInt(month) % 12) + 1;
+            const nextMonth = String(nextMonthNum).padStart(2, '0');
+            const nextYear = parseInt(month) === 12 ? parseInt(year) + 1 : year;
+            
+            const nextMonthTransactions = query(
+                'SELECT * FROM transactions WHERE user_id = ? AND date LIKE ? AND type = ? ORDER BY date ASC',
+                [currentUserId, `${nextYear}-${nextMonth}%`, 'expense']
+            );
+
+            const carryoverDiv = document.getElementById('carryover-expenses');
+            if (nextMonthTransactions.length > 0) {
+                carryoverDiv.innerHTML = '';
+                let carryoverTotal = 0;
+                nextMonthTransactions.forEach(t => {
+                    carryoverTotal += t.amount;
+                    const el = document.createElement('div');
+                    el.className = 'flex items-center bg-orange-50 p-3 rounded-lg border border-orange-200';
+                    el.innerHTML = `
+                        <i class="fas fa-exclamation-circle text-orange-500 mr-3"></i>
+                        <div class="flex-grow">
+                            <p class="font-semibold text-sm">${t.description}</p>
+                            <p class="text-xs text-gray-600">${new Date(t.date).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                        <p class="font-bold text-orange-600">${formatCurrency(t.amount)}</p>
+                    `;
+                    carryoverDiv.appendChild(el);
+                });
+                const totalEl = document.createElement('div');
+                totalEl.className = 'mt-2 p-2 bg-orange-100 rounded-lg border border-orange-300';
+                totalEl.innerHTML = `<p class="font-bold text-orange-700">Total do próximo mês: ${formatCurrency(carryoverTotal)}</p>`;
+                carryoverDiv.appendChild(totalEl);
+            } else {
+                carryoverDiv.innerHTML = '<p class="text-gray-500 text-center">Nenhuma despesa no próximo mês</p>';
+            }
+        }
+
+        // Data padrão
+        document.getElementById('date').valueAsDate = new Date();
+
+        // Inicializar
+        async function start() {
+            await initDB();
+            populateDateSelectors();
+            const saved = localStorage.getItem('user');
+            if (saved) {
+                const user = JSON.parse(saved);
+                currentUserId = user.id;
+                currentUserEmail = user.email;
+                showApp();
+                // Atualizar visibilidade das opções de parcelas após carregar
+                setTimeout(() => {
+                    updateInstallmentsVisibility();
+                }, 100);
+            } else {
+                authScreen.style.display = 'flex';
+            }
+        }
+
+        start();
+    </script>
+</body>
+</html>
