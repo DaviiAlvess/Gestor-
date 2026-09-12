@@ -1,0 +1,14 @@
+{
+  "name": "gestor-financeiro",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Gestor de finanças pessoais com SQLite local",
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node --test financeiro_lo-/tests/core.test.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
+

@@ -1,0 +1,11 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const F=require('../core.js');
+test('parcelas conservam exatamente o valor em centavos',()=>{for(const amount of [100,999.99,0.03,1234.56]){const count=amount<1?3:7;const parts=F.installments(amount,count,'2026-01-31');assert.equal(parts.reduce((s,p)=>s+Math.round(p.amount*100),0),Math.round(amount*100));}});
+test('fim de mês não pula fevereiro nem perde o dia original',()=>{assert.equal(F.addMonths('2026-01-31',1),'2026-02-28');assert.equal(F.addMonths('2024-01-31',1),'2024-02-29');assert.equal(F.addMonths('2026-01-31',2),'2026-03-31');assert.equal(F.addMonths('2026-12-15',1),'2027-01-15');});
+test('datas e parcelas inválidas são rejeitadas antes de salvar',()=>{assert.equal(F.validDate('2026-02-30'),false);assert.throws(()=>F.installments(-100,3,'2026-01-01'));assert.throws(()=>F.installments(100,0,'2026-01-01'));assert.throws(()=>F.installments(0.01,3,'2026-01-01'));assert.throws(()=>F.installments(100,2.5,'2026-01-01'));});
+test('dívida usa o pagamento real na última parcela',()=>{const result=F.debt(1000,0,300);assert.equal(result.total,1000);assert.equal(result.schedule.length,4);assert.equal(result.schedule.at(-1).amount,100);});
+test('juros e principal fecham com o total pago',()=>{const result=F.debt(1000,2,150);assert.equal(Math.round(result.total*100),100000+Math.round(result.interest*100));assert.equal(result.schedule.at(-1).remaining,0);});
+test('dívidas sem amortização ou com taxa inválida não retornam prazo falso',()=>{assert.throws(()=>F.debt(1000,2,20));assert.throws(()=>F.debt(1000,-1,100));assert.throws(()=>F.debt(1000,NaN,100));assert.throws(()=>F.debt(1000,0,1));});
+test('receita final corresponde ao último mês e não ao seguinte',()=>{assert.deepEqual(F.income(100,10,2),{total:210,last:110.00000000000001,average:105});assert.deepEqual(F.income(100,0,1),{total:100,last:100,average:100});});
+test('projeções inválidas são rejeitadas',()=>{assert.throws(()=>F.income(100,2,NaN));assert.throws(()=>F.income(100,2,121));assert.throws(()=>F.income(100,-101,12));});
