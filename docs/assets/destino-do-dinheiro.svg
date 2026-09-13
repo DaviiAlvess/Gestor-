@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 420" role="img" aria-labelledby="title desc">
+  <title id="title">Exemplo: destino das despesas no mês</title>
+  <desc id="desc">Gráfico ilustrativo de despesas por categoria, com valores de demonstração.</desc>
+  <rect width="920" height="420" fill="#f7f8f4"/>
+  <text x="40" y="48" font-family="Georgia, serif" font-size="26" fill="#233b32">Para onde foi o dinheiro</text>
+  <text x="40" y="78" font-family="Arial, sans-serif" font-size="14" fill="#7c847e">Exemplo ilustrativo  não são dados reais de um usuário</text>
+  <g font-family="Arial, sans-serif">
+    <text x="40" y="132" font-size="15" fill="#233b32">Moradia</text>
+    <text x="780" y="132" font-size="15" fill="#233b32" text-anchor="end">R$ 1.800</text>
+    <rect x="40" y="142" width="780" height="14" rx="7" fill="#edf0e8"/>
+    <rect x="40" y="142" width="624" height="14" rx="7" fill="#81946f"/>
+    <text x="40" y="192" font-size="15" fill="#233b32">Alimentação</text>
+    <text x="780" y="192" font-size="15" fill="#233b32" text-anchor="end">R$ 740</text>
+    <rect x="40" y="202" width="780" height="14" rx="7" fill="#edf0e8"/>
+    <rect x="40" y="202" width="256" height="14" rx="7" fill="#81946f"/>
+    <text x="40" y="252" font-size="15" fill="#233b32">Transporte</text>
+    <text x="780" y="252" font-size="15" fill="#233b32" text-anchor="end">R$ 420</text>
+    <rect x="40" y="262" width="780" height="14" rx="7" fill="#edf0e8"/>
+    <rect x="40" y="262" width="146" height="14" rx="7" fill="#81946f"/>
+    <text x="40" y="312" font-size="15" fill="#233b32">Lazer</text>
+    <text x="780" y="312" font-size="15" fill="#233b32" text-anchor="end">R$ 310</text>
+    <rect x="40" y="322" width="780" height="14" rx="7" fill="#edf0e8"/>
+    <rect x="40" y="322" width="108" height="14" rx="7" fill="#81946f"/>
+    <text x="40" y="362" font-size="15" fill="#233b32">Outros</text>
+    <text x="780" y="362" font-size="15" fill="#233b32" text-anchor="end">R$ 450</text>
+    <rect x="40" y="372" width="780" height="14" rx="7" fill="#edf0e8"/>
+    <rect x="40" y="372" width="156" height="14" rx="7" fill="#81946f"/>
+  </g>
+</svg>
