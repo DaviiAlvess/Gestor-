@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.Gestor" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/gestor_green</item>
+        <item name="android:statusBarColor">@color/gestor_green</item>
+        <item name="android:navigationBarColor">@color/gestor_paper</item>
+        <item name="android:windowBackground">@color/gestor_paper</item>
+    </style>
+</resources>

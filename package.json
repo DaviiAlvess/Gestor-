@@ -1,14 +1,17 @@
 {
   "name": "gestor-financeiro",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
-  "description": "Gestor de finanças pessoais com SQLite local",
+  "author": "DAVI ALMEIDA DOS SANTOS ALVES",
+  "license": "MIT",
+  "description": "Gestor de finanças pessoais com SQLite local e aplicativo para celular",
   "scripts": {
     "start": "node server.cjs",
-    "test": "node --test financeiro_lo-/tests/core.test.cjs"
+    "test": "node --test app/tests/core.test.cjs app/tests/pwa.test.cjs app/tests/data.test.cjs tests/android.test.cjs",
+    "build": "node build.cjs",
+    "android:sync": "node scripts/sync-android.cjs"
   },
   "engines": {
     "node": ">=18"
   }
 }
-

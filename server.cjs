@@ -2,12 +2,17 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const root = path.join(__dirname, 'financeiro_lo-');
+const root = path.join(__dirname, 'app');
 const port = Number(process.env.PORT || 8080);
 const mime = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.webmanifest': 'application/manifest+json',
+  '.wasm': 'application/wasm',
+  '.png': 'image/png',
+  '.ttf': 'font/ttf',
+  '.woff2': 'font/woff2',
 };
 
 const server = http.createServer((request, response) => {

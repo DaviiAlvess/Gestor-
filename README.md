@@ -1,55 +1,67 @@
 # Gestor
 
-Um gestor de finanças pessoais em português, com armazenamento local em SQLite. Interface responsiva, visão mensal, busca, edição de movimentações, contas previstas, relatórios por categoria e simuladores de dívidas e receitas.
+Gestor de finanças pessoais em português. Os dados ficam no seu dispositivo, em SQLite, sem conta na nuvem. Dá para usar no navegador, instalar como aplicativo (PWA) no celular ou abrir o APK Android.
 
-## Abrir o projeto
+Versão publicada: [gestor-opal.vercel.app](https://gestor-opal.vercel.app)
 
-Com Node.js 18 ou superior instalado, execute na pasta do projeto:
+## Abrir no computador
+
+Com Node.js 18 ou superior, na pasta do projeto:
 
 ```sh
 npm start
 ```
 
-Abra `http://127.0.0.1:8080`. O servidor é local, sem dependências adicionais. Não é necessário executar `npm install`.
+Abra `http://127.0.0.1:8080`. Não é necessário `npm install`. Mantenha o mesmo endereço e porta para continuar vendo os mesmos dados.
 
-Como alternativa, com Python instalado, sirva a pasta `financeiro_lo-`:
-
-```sh
-python -m http.server 8080 --directory financeiro_lo-
-```
-
-Mantenha sempre o mesmo endereço e porta ao usar seus dados. O SQL.js é carregado pelo CDN e precisa de conexão na inicialização. As fontes também usam um serviço externo, com alternativas locais se não carregarem. Não é necessário configurar um servidor de banco de dados.
-
-Use **Conhecer com dados de exemplo** para explorar uma demonstração descartável. Ela não grava nem substitui os dados reais.
-
-## Dados e compatibilidade
-
-- O SQLite permanece na chave `db` do armazenamento local, com as mesmas tabelas da versão anterior. Para acessar os dados existentes, use o mesmo navegador e a mesma origem (protocolo, endereço e porta). Uma mudança de origem não transporta os dados automaticamente.
-- O perfil é local. Não há serviço remoto de autenticação, sincronização ou criptografia do banco. Pessoas com acesso ao navegador podem acessar os dados armazenados.
-- Novas senhas usam PBKDF2/SHA-256 com salt aleatório. Senhas antigas em texto simples são migradas quando o usuário entra com a senha. A sessão salva contém somente ID e e-mail.
-- **Baixar backup** exporta o banco completo em `.sqlite`, incluindo todos os perfis locais. Guarde-o em local privado. A interface ainda não importa backups.
-- **Exportar CSV** exporta as movimentações do mês com os filtros atuais, no formato UTF-8 com separador `;`.
-- Limpar os dados do navegador remove os registros. Não há recuperação remota. Múltiplas abas escrevendo simultaneamente não são suportadas; use uma aba por vez.
-
-## Regras de registro
-
-O valor de uma movimentação parcelada é o **total**, dividido em centavos entre os meses. Datas no fim do mês são ajustadas para o último dia válido. As parcelas aparecem nos respectivos meses do histórico.
-
-Contas previstas e parcelas criadas pelo simulador são pendências: só entram nas movimentações após a baixa. O pagamento da última parcela de uma dívida considera apenas o saldo restante e os juros do mês. As simulações não incluem tarifas adicionais.
-
-Limite de despesas e meta de receitas são referências globais do perfil, usadas em todos os meses. Não são versões históricas do orçamento.
-
-## Organização e validação
-
-- `financeiro_lo-/index.html`: estrutura e formulários.
-- `financeiro_lo-/styles.css`: identidade visual e adaptação a telas menores.
-- `financeiro_lo-/app.js`: persistência, navegação e operações.
-- `financeiro_lo-/core.js`: cálculos e tratamento de datas sem dependências.
-
-Execute os testes de regras de negócio com Node.js:
+Como alternativa:
 
 ```sh
-node --test financeiro_lo-/tests/core.test.cjs
+python -m http.server 8080 --directory app
 ```
 
-Os testes cobrem divisão exata em centavos, fim de mês e ano, datas inválidas, amortização, juros, última parcela e projeção mensal.
+Depois do primeiro acesso completo, o aplicativo web consegue abrir sem internet. Use **Conhecer com dados de exemplo** para uma demonstração descartável.
+
+## Celular
+
+- **Android:** baixe o APK em [Actions → Android APK](https://github.com/DaviiAlvess/Gestor-/actions/workflows/android.yml) (artefato `gestor-android`) ou instale pelo Chrome a partir do endereço HTTPS. Instruções em [Instalar no celular](INSTALAR-NO-CELULAR.md).
+- **iPhone:** no Safari, **Compartilhar → Adicionar à Tela de Início**. Detalhes no mesmo guia.
+
+O servidor `127.0.0.1` não instala no celular. Use o endereço HTTPS publicado ou o APK.
+
+## Dados
+
+- O SQLite fica na chave `db` do armazenamento local. Mudar de origem (protocolo, endereço ou porta) não leva os dados junto.
+- O perfil é local. Não há sincronização, autenticação remota nem criptografia do banco. Quem usa o aparelho pode ver os registros.
+- Novas senhas usam PBKDF2/SHA-256. Senhas antigas em texto simples são migradas no próximo login.
+- **Baixar backup** exporta todos os perfis em `.sqlite`. **Restaurar arquivo** substitui os dados atuais após confirmação.
+- Limpar dados do navegador ou desinstalar o aplicativo remove os registros. Use uma aba de cada vez.
+
+## Regras
+
+O valor parcelado é o **total**, dividido em centavos. Datas no fim do mês vão para o último dia válido. Contas previstas e parcelas do simulador só entram no histórico depois da baixa. Limite de despesas e meta de receitas valem para todos os meses.
+
+## Organização
+
+| Pasta | Função |
+| --- | --- |
+| `app/` | Interface, SQLite local, PWA e testes |
+| `android/` | Projeto do aplicativo Android |
+| `scripts/` | Publicação web e cópia dos arquivos para o APK |
+| `dist/` | Pacote gerado por `npm run build` (não versionado) |
+
+```sh
+npm test
+npm run build
+npm run android:sync
+```
+
+`npm test` cobre cálculos, persistência, cache offline e a estrutura do pacote Android.
+
+## Autoria
+
+Projeto de [DaviiAlvess](https://github.com/DaviiAlvess) — DAVI ALMEIDA DOS SANTOS ALVES.
+
+## Licença
+
+MIT. Veja [LICENSE](LICENSE).
