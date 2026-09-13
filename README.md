@@ -50,7 +50,7 @@ flowchart TB
   app --> offline[Uso sem internet]
 ```
 
-## Começar em 2 minutos
+
 
 ```sh
 npm start
